@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class tabuLösung {
@@ -12,13 +14,38 @@ public class tabuLösung {
     private boolean legalität;
     private List<Fahrzeug> fahrzeuge;
     private List<Knoten> einzufügendeKnoten;
+    private List<Knoten> AußerhalbDerZeit = new ArrayList<>();
+    private List<Knoten> dynaicList = new ArrayList<>();
+    private List<Knoten> aufgetreten = new ArrayList<>();
 
 
     public String toString(){
         return String.format("%d-%d.%d-%d.%d-%d--%f-",veränderung,fahrzeug1,index1,fahrzeug2,index2,knoten,funktionswert) + legalität;
     }
 
+    public List<Knoten> getAufgetreten() {
+        return aufgetreten;
+    }
 
+    public void setAufgetreten(List<Knoten> aufgetreten) {
+        this.aufgetreten = aufgetreten;
+    }
+
+    public List<Knoten> getDynaicList() {
+        return dynaicList;
+    }
+
+    public void setDynaicList(List<Knoten> dynaicList) {
+        this.dynaicList = dynaicList;
+    }
+
+    public List<Knoten> getAußerhalbDerZeit() {
+        return AußerhalbDerZeit;
+    }
+
+    public void setAußerhalbDerZeit(List<Knoten> außerhalbDerZeit) {
+        AußerhalbDerZeit = außerhalbDerZeit;
+    }
 
     public void setVeränderung(int veränderung) {
         this.veränderung = veränderung;

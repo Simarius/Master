@@ -5,11 +5,13 @@ public class Fahrzeug{
     private int ID;
     private List<Knoten> Knoten;
     private int Kapa;
-    private int KapazitätsMaximum = 250;
+    private int KapazitätsMaximum = 500;
+    // Nur Noch starten
     private boolean verfügbar;
     private List<Knoten> Puffer = new ArrayList<>();
     private List<Knoten> PufferSave = new ArrayList<>();
     private List<ServiceArea> ServiceAreas = new ArrayList<>();
+    private Knoten Depot;
 
     public Fahrzeug(Knoten Depot, Knoten Depot2, int id) {
         Knoten = new ArrayList<>();
@@ -24,6 +26,11 @@ public class Fahrzeug{
         Knoten.add(Depot);
         ID = id;
         verfügbar = true;
+        this.Depot = Depot;
+    }
+
+    public void setKapazitätsMaximum(int kapazitätsMaximum) {
+        KapazitätsMaximum = kapazitätsMaximum;
     }
 
     public List<Knoten> getPufferSave() {
@@ -87,5 +94,26 @@ public class Fahrzeug{
             System.out.print(k.getID() + " - ");
         }
         System.out.println();
+    }
+
+    public Knoten getDepot() {
+        return Depot;
+    }
+
+    public void setKnoten(List<Knoten> knoten) {
+        Knoten = knoten;
+    }
+
+    public Fahrzeug klonen(Fahrzeug ursprung){
+        Fahrzeug neu = new Fahrzeug(ursprung.getDepot(),ursprung.getID());
+        neu.setKapa(ursprung.getKapa());
+        ArrayList<Knoten> neuKnoten = new ArrayList<>();
+        for(Knoten k : ursprung.getKnoten()){
+            neuKnoten.add(new Knoten(k.getX_Koordinate(),k.getY_Koordinate(),k.getID(),k.getWahrscheinlichkeit(),k.getBedarf(),k.getStartZeit(),k.getEndZeit(),k.getBesuchsZeit(),k.getWinkel(),k.getPuffer(),k.getServiceArea()));
+        }
+        neu.setKnoten(neuKnoten);
+        return neu;
+
+
     }
 }

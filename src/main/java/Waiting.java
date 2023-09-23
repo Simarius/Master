@@ -12,19 +12,23 @@ import java.util.List;
 import java.util.Random;
 
 public class Waiting {
+    private int AUFTRITSWAHRSCHEINLICHKEIT = 30;
+
     private List<Fahrzeug> Fahrzeuge = new ArrayList<>();
     private Knoten Depot;
     List<Knoten> aktiveKnoten;
     private Knoten Depot2;
-
-    public Waiting(Knoten depot) {
+    String path;
+    public Waiting(Knoten depot, int a, String path) {
         Depot = depot;
+        AUFTRITSWAHRSCHEINLICHKEIT = a;
+        this.path = path;
     }
 
     public void waiting(List<Knoten> knotenList, List<Knoten> dynamicList) throws IOException {
         long startTime = System.nanoTime();
 
-        File fiel = new File("D:\\Users\\Jonas\\Desktop\\Uni\\Master\\Auswertung\\auswertung.xlsx");
+        File fiel = new File(path);
         FileInputStream file = new FileInputStream(fiel);
         Workbook workbook = new XSSFWorkbook(file);
         Sheet sheet = workbook.getSheet("Waiting");
@@ -90,7 +94,7 @@ public class Waiting {
         }
         for(int zeit = 0; zeit < 12; zeit++) {
             for (Knoten k : dynamicList) {
-                if (random.nextInt(100) < k.getWahrscheinlichkeit() && random.nextInt(100) < 25) {
+                if (random.nextInt(100) < k.getWahrscheinlichkeit() && random.nextInt(100) < AUFTRITSWAHRSCHEINLICHKEIT) {
                     if(k.getEndZeit() >= zeit + 1){
                         k.setStartZeit(utils.maximum(zeit + 1, k.getStartZeit()));
                     }else{
@@ -332,11 +336,12 @@ public class Waiting {
         row.createCell(0).setCellValue(gesammtLänge);
         row.createCell(1).setCellValue(nichtEingefügteKnoten);
         row.createCell(2).setCellValue( außerhalbDerZeit.size());
-        row.createCell(3).setCellValue((gesammtLänge + (nichtEingefügteKnoten - außerhalbDerZeit.size()) * 1000));
-        row.createCell(4).setCellValue(totalTime);
+        row.createCell(3).setCellValue(dynamicList.size());
+        row.createCell(4).setCellValue((gesammtLänge + (nichtEingefügteKnoten - außerhalbDerZeit.size()) * 1000));
+        row.createCell(5).setCellValue(totalTime);
 
         for(int i = 0; i < Fahrzeuge.size(); i++){
-            row.createCell(i + 5).setCellValue(Fahrzeuge.get(i).toString());
+            row.createCell(i + 6).setCellValue(Fahrzeuge.get(i).toString());
         }
         FileOutputStream outputStream = new FileOutputStream(fiel);
         workbook.write(outputStream);

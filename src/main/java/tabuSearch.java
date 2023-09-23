@@ -5,12 +5,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class tabuSearch {
+    int BelohnungJeKnotn = 1001;
+
+    private int AUFTRITSWAHRSCHEINLICHKEIT = 80;
     int ITERATION = 100;
     int NACHBARSCHAFTSGRÖßE = 100;
     int MAXILLEGALELÖSUNGENINFOLGE = 10;
@@ -19,23 +19,26 @@ public class tabuSearch {
     List<Fahrzeug> fahrzeuge;
     List<Knoten> dynamicList;
     List<Knoten> einzufügendeKonten = new ArrayList<>();
+    List<Knoten> aufgetretendeKnoten = new ArrayList<>();
     List<tabuLösung> Lösungen = new ArrayList<>();
     List<tabuLösung> Tabu = new ArrayList<>();
     List<Knoten> AußerhalDerZeit = new ArrayList<>();
+    String path;
 
-    public tabuSearch(List<Fahrzeug> fahrzeuge, List<Knoten> dynamicList) {
+    public tabuSearch(List<Fahrzeug> fahrzeuge, List<Knoten> dynamicList, int a, String path) {
         this.fahrzeuge = fahrzeuge;
         this.dynamicList = dynamicList;
+        AUFTRITSWAHRSCHEINLICHKEIT = a;
+        this.path = path;
     }
 
     public List<Fahrzeug> tabuSearching() throws IOException {
         long startTime = System.nanoTime();
 
-        File fiel = new File("D:\\Users\\Jonas\\Desktop\\Uni\\Master\\Auswertung\\auswertung.xlsx");
+        File fiel = new File(path);
         FileInputStream file = new FileInputStream(fiel);
         Workbook workbook = new XSSFWorkbook(file);
         Sheet sheet = workbook.getSheet("Tabu");
-        System.out.println(sheet.getLastRowNum());
         Row row = sheet.createRow(sheet.getLastRowNum() + 1);
 
         Random rnd = new Random();
@@ -46,40 +49,60 @@ public class tabuSearch {
         tabuLösung besteLösung = null;
         tabuLösung aktuelleLösung = null;
         for(int Stunde =0; Stunde < 12; Stunde++) {
-
-            if (rnd.nextInt(100) < 60 && !dynamicList.isEmpty()) {
+            boolean neueEinfügung = false;
+            if (rnd.nextInt(100) < AUFTRITSWAHRSCHEINLICHKEIT && !dynamicList.isEmpty()) {
                 Knoten KnotenNeu = dynamicList.get(rnd.nextInt(dynamicList.size()));
                 dynamicList.remove(KnotenNeu);
                 einzufügendeKonten.add(KnotenNeu);
+                aufgetretendeKnoten.add(KnotenNeu);
                 System.out.println("Knoten " + KnotenNeu.getID() + " wurde hinzugefügt");
                 if (KnotenNeu.getEndZeit() >= Stunde + 1) {
                     for(Knoten k: einzufügendeKonten) {
                         k.setStartZeit(utils.maximum(Stunde + 1, k.getStartZeit()));
+                        neueEinfügung = true;
                     }
                 } else {
-                    System.out.println("Die Anfrage bezieht sich auf ein bereits überschrittenes Zeitfenster");
+                    System.out.println("Die Anfrage " + KnotenNeu.getID() + " bezieht sich auf ein bereits überschrittenes Zeitfenster");
                     System.out.println("Es ist: " + Stunde);
                     System.out.println("Anfrage geht von " + KnotenNeu.getStartZeit() + " bis " + KnotenNeu.getEndZeit());
                     AußerhalDerZeit.add(KnotenNeu);
+                    einzufügendeKonten.remove(KnotenNeu);
 
                 }
             }
 
-            List<Knoten> saveKnoten;
-            List<Fahrzeug> saveFahrzeuge;
+            List<Knoten> saveKnoten = new ArrayList<>();
+            List<Fahrzeug> saveFahrzeuge = new ArrayList<>();
             for(int i = 0; i < ITERATION; i++) {
                 //aktuelle Lösung
                 if(aktuelleLösung == null) {
-                    saveKnoten = einzufügendeKonten;
-                    saveFahrzeuge = fahrzeuge;
+                    saveKnoten = new ArrayList<>(einzufügendeKonten);
+                    for(Fahrzeug f : fahrzeuge){
+                        saveFahrzeuge.add(f.klonen(f));
+                    }
                 }else{
-                    saveKnoten = aktuelleLösung.getEinzufügendeKnoten();
-                    saveFahrzeuge = aktuelleLösung.getFahrzeuge();
+                    saveKnoten = new ArrayList<>(aktuelleLösung.getEinzufügendeKnoten());
+                    if (neueEinfügung) {
+                        try {
+                            saveKnoten.add(einzufügendeKonten.get(einzufügendeKonten.size() - 1));
+                        }catch (IndexOutOfBoundsException ignore){
+
+                        }
+                        neueEinfügung = false;
+                    }
+                    saveFahrzeuge = new ArrayList<>(aktuelleLösung.getFahrzeuge());
                 }
                 for(int a = 0; a < NACHBARSCHAFTSGRÖßE; a++) {
-                    fahrzeuge = saveFahrzeuge;
-                    einzufügendeKonten = saveKnoten;
+                    fahrzeuge = new ArrayList<>();
+                    for(Fahrzeug t : saveFahrzeuge){
+                        fahrzeuge.add(t.klonen(t));
+                    }
+
+                    einzufügendeKonten = new ArrayList<>(saveKnoten);
                     Lösungen.add(new tabuLösung());
+                    Lösungen.get(Lösungen.size() - 1).setAufgetreten(new ArrayList<>(aufgetretendeKnoten));
+                    Lösungen.get(Lösungen.size() - 1).setEinzufügendeKnoten(new ArrayList<>(einzufügendeKonten));
+
                     int cases;
                     if (!einzufügendeKonten.isEmpty()) {
                         cases = rnd.nextInt(3);
@@ -97,21 +120,30 @@ public class tabuSearch {
 
                         case 2:
                             int Knoten = rnd.nextInt(einzufügendeKonten.size());
+                            Knoten blup = einzufügendeKonten.get(Knoten);
                             insert(einzufügendeKonten.get(Knoten));
-                            einzufügendeKonten.remove(Knoten);
+                            einzufügendeKonten.remove(blup);
+                            Lösungen.get(Lösungen.size() - 1).getEinzufügendeKnoten().remove(blup);
                             break;
                     }
                     //berechne funktionswert
                     //prüfe auf legalität
-                    Lösungen.get(Lösungen.size() - 1).setFahrzeuge(fahrzeuge);
-                    Lösungen.get(Lösungen.size() - 1).setEinzufügendeKnoten(einzufügendeKonten);
+                    List<Fahrzeug> temp = new ArrayList<>();
+                    for(Fahrzeug f: fahrzeuge){
+                        temp.add(f.klonen(f));
+                    }
+                    Lösungen.get(Lösungen.size() - 1).setFahrzeuge(temp);
+                    Lösungen.get(Lösungen.size() - 1).setDynaicList(new ArrayList<>(dynamicList));
+                    Lösungen.get(Lösungen.size() - 1).setAußerhalbDerZeit(new ArrayList<>(AußerhalDerZeit));
+
+
                     double gesammtLänge = 0d;
                     List<Boolean> legalitäten = new ArrayList<Boolean>();
                     for (Fahrzeug f : fahrzeuge) {
                         legalitäten.add(prüfeAufLegalität(f));
                         gesammtLänge += f.längeBerechnen();
                     }
-                    double funktionswert = gesammtLänge + ((einzufügendeKonten.size() - AußerhalDerZeit.size()) * 1000);
+                    double funktionswert = gesammtLänge + ((Lösungen.get(Lösungen.size() - 1).getAufgetreten().size() - Lösungen.get(Lösungen.size() - 1).getAußerhalbDerZeit().size())  * 1000) - (6 - Lösungen.get(Lösungen.size() - 1).getDynaicList().size()) * BelohnungJeKnotn;
                     Lösungen.get(Lösungen.size() - 1).setFunktionswert(funktionswert);
                     if (legalitäten.contains(false)) {
                         Lösungen.get(Lösungen.size() - 1).setLegalität(false);
@@ -195,20 +227,22 @@ public class tabuSearch {
             }
 
             System.out.println("Gesammtlänge der Lösung: " + Gesammtlänge);
-            System.out.println("Anzahl nicht eingefügter Knoten: " + einzufügendeKonten.size());
-            System.out.println("Anzahl Knoten die Außerhalb der Zeit aufgetaucht sind: " + AußerhalDerZeit.size());
-            System.out.println("Funktionswert der Lösung: " + (Gesammtlänge + (einzufügendeKonten.size() - AußerhalDerZeit.size()) * 1000));
+            System.out.println("Anzahl nicht eingefügter Knoten: " + besteLösung.getAufgetreten().size());
+            System.out.println("Anzahl Knoten die Außerhalb der Zeit aufgetaucht sind: " + besteLösung.getAußerhalbDerZeit().size());
+            System.out.println("Funktionswert der Lösung: " + (Gesammtlänge + (einzufügendeKonten.size() - besteLösung.getAußerhalbDerZeit().size()) * 1000));
             long endTime   = System.nanoTime();
             long totalTime = endTime - startTime;
 
             row.createCell(0).setCellValue(Gesammtlänge);
-            row.createCell(1).setCellValue(einzufügendeKonten.size());
-            row.createCell(2).setCellValue( AußerhalDerZeit.size());
-            row.createCell(3).setCellValue((Gesammtlänge + (einzufügendeKonten.size() - AußerhalDerZeit.size()) * 1000));
-            row.createCell(4).setCellValue(totalTime);
+            row.createCell(1).setCellValue(besteLösung.getAufgetreten().size() - besteLösung.getAußerhalbDerZeit().size());
+            row.createCell(2).setCellValue( besteLösung.getAußerhalbDerZeit().size());
+            row.createCell(3).setCellValue(besteLösung.getDynaicList().size());
+            row.createCell(4).setCellValue(Gesammtlänge + (besteLösung.getEinzufügendeKnoten().size() )* 1000);
+            row.createCell(5).setCellValue(totalTime);
+
 
             for(int i = 0; i < fahrzeuge.size(); i++){
-                row.createCell(i + 5).setCellValue(fahrzeuge.get(i).toString());
+                row.createCell(i + 6).setCellValue(besteLösung.getFahrzeuge().get(i).toString());
             }
 
         }
@@ -281,8 +315,14 @@ public class tabuSearch {
             fahrzeug2 = fahrzeuge.get(rnd.nextInt(fahrzeuge.size()));
         }while ((!fahrzeug1.equals(fahrzeug2)));
         Lösungen.get(Lösungen.size() - 1).setFahrzeug2(fahrzeug2.getID());
-         int eins = rnd.nextInt(fahrzeug1.getKnoten().size()-2)+1;
-         int zwei = rnd.nextInt(fahrzeug2.getKnoten().size()-2)+1;
+        int eins = 0;
+        int zwei = 0;
+        if(fahrzeug1.getKnoten().size() < 2){
+            eins = rnd.nextInt(fahrzeug1.getKnoten().size() - 2) + 1;
+        }
+        if(fahrzeug2.getKnoten().size() < 2) {
+            zwei = rnd.nextInt(fahrzeug2.getKnoten().size() - 2) + 1;
+        }
         Lösungen.get(Lösungen.size() - 1).setIndex1(eins);
         Lösungen.get(Lösungen.size() - 1).setIndex2(zwei);
 

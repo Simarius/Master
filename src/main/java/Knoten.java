@@ -12,6 +12,19 @@ public class Knoten {
     private ServiceArea ServiceArea;
 
 
+    public Knoten(double x_Koordinate, double y_Koordinate, int ID, double wahrscheinlichkeit, int bedarf, int startZeit, int endZeit, int besuchsZeit, double winkel, Integer puffer, ServiceArea serviceArea) {
+        X_Koordinate = x_Koordinate;
+        Y_Koordinate = y_Koordinate;
+        this.ID = ID;
+        Wahrscheinlichkeit = wahrscheinlichkeit;
+        Bedarf = bedarf;
+        this.startZeit = startZeit;
+        this.endZeit = endZeit;
+        this.besuchsZeit = besuchsZeit;
+        Winkel = winkel;
+        Puffer = puffer;
+        ServiceArea = serviceArea;
+    }
 
     public Knoten(double x_Koordinate, double y_Koordinate, int ID, double wahrscheinlichkeit, int bedarf, int startZeit, int endZeit) {
         X_Koordinate = x_Koordinate;

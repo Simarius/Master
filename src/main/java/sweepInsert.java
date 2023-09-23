@@ -17,18 +17,28 @@ public class sweepInsert {
     private File fiel;
     private Workbook workbook;
     private long startTime;
+    private int fahrzeugKapa = 0;
+    private int fahrzeugKapaPuffer = 0;
 
-    public sweepInsert(Knoten depot) {
+    private int AUFTRITSWAHRSCHEINLICHKEIT = 80;
+    private String path;
+
+    public sweepInsert(Knoten depot, int a, String path) {
         Fahrzeuge = new ArrayList<>();
         Depot = depot;
+        AUFTRITSWAHRSCHEINLICHKEIT = a;
+        this.path = path;
     }
 
     public void main(List<Knoten> knotenList) throws IOException {
         startTime = System.nanoTime();
 
         Fahrzeuge.add(new Fahrzeug(Depot, Fahrzeuge.size()));
+        fahrzeugKapa = Fahrzeuge.get(0).getKapazitätsMaximum();
+        fahrzeugKapaPuffer = fahrzeugKapa - 50;
+        Fahrzeuge.get(Fahrzeuge.size()-1).setKapazitätsMaximum(fahrzeugKapaPuffer);
 
-        fiel = new File("D:\\Users\\Jonas\\Desktop\\Uni\\Master\\Auswertung\\auswertung.xlsx");
+        fiel = new File(path);
         FileInputStream file = new FileInputStream(fiel);
         workbook = new XSSFWorkbook(file);
         Sheet sheet = workbook.getSheet("Insertion");
@@ -42,6 +52,7 @@ public class sweepInsert {
             } else {
                 System.out.println("Kein Fahrzeug Verfügbar");
                 Fahrzeuge.add(new Fahrzeug(Depot, Fahrzeuge.size()));
+                Fahrzeuge.get(Fahrzeuge.size()-1).setKapazitätsMaximum(fahrzeugKapaPuffer);
                 Fahrzeug aktuell = Fahrzeuge.get(Fahrzeuge.size() - 1);
                 sweep(neu, aktuell);
             }
@@ -63,13 +74,16 @@ public class sweepInsert {
     public void Insertion(List<Knoten> dynamicList) throws IOException {
         Random random = new Random();
         System.out.println("INSERTION");
+        for(Fahrzeug f : Fahrzeuge){
+            f.setKapazitätsMaximum(fahrzeugKapa);
+        }
         List<Knoten> außerhalbDerZeit = new ArrayList<>();
         int nichtEingefügteKnoten = 0;
         for(int Stunde =0; Stunde < 12; Stunde++){
 
             //Einfügen, dass geprüft wird das ein einfügen an eine bereits vergangenen Position nicht möglich ist
 
-            if(random.nextInt(100) < 60 && !dynamicList.isEmpty()){
+            if(random.nextInt(100) < AUFTRITSWAHRSCHEINLICHKEIT && !dynamicList.isEmpty()){
                 Knoten KnotenNeu = dynamicList.get(random.nextInt(dynamicList.size()));
                 dynamicList.remove(KnotenNeu);
                 System.out.println("Knoten " + KnotenNeu.getID() + " soll eingefügt werden");
@@ -86,6 +100,9 @@ public class sweepInsert {
 
                 boolean einfügbar = true;
                 double[] längenDifferenz = new double[Fahrzeuge.size()];
+                for(int i = 0; i < längenDifferenz.length; i++){
+                    längenDifferenz[i] = Double.MAX_VALUE;
+                }
                 int[] bestePositon = new int[Fahrzeuge.size()];
 
 
@@ -150,10 +167,12 @@ public class sweepInsert {
         row.createCell(0).setCellValue(gesammtLänge);
         row.createCell(1).setCellValue(nichtEingefügteKnoten);
         row.createCell(2).setCellValue( außerhalbDerZeit.size());
-        row.createCell(3).setCellValue((gesammtLänge + (nichtEingefügteKnoten - außerhalbDerZeit.size()) * 1000));
-        row.createCell(4).setCellValue(totalTime);
+        row.createCell(3).setCellValue(dynamicList.size());
+        row.createCell(4).setCellValue((gesammtLänge + (nichtEingefügteKnoten - außerhalbDerZeit.size()) * 1000));
+        row.createCell(5).setCellValue(totalTime);
+
         for(int i = 0; i < Fahrzeuge.size(); i++){
-            row.createCell(i + 5).setCellValue(Fahrzeuge.get(i).toString());
+            row.createCell(i + 6).setCellValue(Fahrzeuge.get(i).toString());
         }
         FileOutputStream outputStream = new FileOutputStream(fiel);
         workbook.write(outputStream);
@@ -176,6 +195,7 @@ public class sweepInsert {
                 System.out.println("Zeitlich nicht okay");
                 //keine zeitlich akzeptierte Einordnung gefunden
                 Fahrzeuge.add(new Fahrzeug(Depot, Fahrzeuge.size()));
+                Fahrzeuge.get(Fahrzeuge.size()-1).setKapazitätsMaximum(fahrzeugKapaPuffer);
                 aktuell = Fahrzeuge.get(Fahrzeuge.size()-1);
                 sweep(neu, aktuell);
             }
@@ -183,6 +203,7 @@ public class sweepInsert {
             System.out.println("Kapazitär nicht okay");
             //Keine Kapazitäre Einordnung
             Fahrzeuge.add(new Fahrzeug(Depot, Fahrzeuge.size()));
+            Fahrzeuge.get(Fahrzeuge.size()-1).setKapazitätsMaximum(fahrzeugKapaPuffer);
             aktuell = Fahrzeuge.get(Fahrzeuge.size()-1);
             sweep(neu, aktuell);
         }
