@@ -99,6 +99,7 @@ public class sweepInsert {
                 }
 
                 boolean einfügbar = true;
+                boolean neuesFahrzeug = false;
                 double[] längenDifferenz = new double[Fahrzeuge.size()];
                 for(int i = 0; i < längenDifferenz.length; i++){
                     längenDifferenz[i] = Double.MAX_VALUE;
@@ -128,15 +129,26 @@ public class sweepInsert {
                             einfügbar = false;
                         }
                     }else {
-                        System.out.println("Kapazitär nicht okay");
+                        System.out.println("Kapazitär nicht okay (insert)");
                         System.out.println("Fahrzeugnummer: " + aktuell.getID());
                         System.out.println("Knotennummer: " + KnotenNeu.getID());
                         System.out.println(aktuell.getKapa() + "+" + KnotenNeu.getBedarf() + ">" + aktuell.getKapazitätsMaximum());
                         //keine zeitlich akzeptierte Einordnung gefunden
                         einfügbar = false;
+                        neuesFahrzeug = true;
                     }
                 }
-                if(einfügbar) {
+                //neuesFahrzeug = false;
+                if(neuesFahrzeug){
+                    Fahrzeug a = (new Fahrzeug(Depot, Fahrzeuge.size()));
+                    a.getKnoten().set(1,KnotenNeu);
+                    a.setKapa(KnotenNeu.getBedarf());
+                    Fahrzeuge.add(a);
+
+
+                }
+                if(neuesFahrzeug && einfügbar) {
+                }else if(einfügbar) {
                     int besteEinfügung = utils.findMinIndex(längenDifferenz);
                     Fahrzeuge.get(besteEinfügung).getKnoten().add(bestePositon[besteEinfügung], KnotenNeu);
                     Fahrzeuge.get(besteEinfügung).setKapa(Fahrzeuge.get(besteEinfügung).getKapa() + KnotenNeu.getBedarf());

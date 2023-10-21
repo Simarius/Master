@@ -5,7 +5,7 @@ public class Fahrzeug{
     private int ID;
     private List<Knoten> Knoten;
     private int Kapa;
-    private int KapazitätsMaximum = 500;
+    private int KapazitätsMaximum = 250;
     // Nur Noch starten
     private boolean verfügbar;
     private List<Knoten> Puffer = new ArrayList<>();
